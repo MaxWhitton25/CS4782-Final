@@ -48,12 +48,11 @@ class RAGGenerator(nn.Module):
             input_ids=input_ids, attention_mask=attention_mask, labels=labels, **kwargs
         )
 
-    @staticmethod
-    def get_tokenizer(model_name: str = "facebook/bart-base"):
+    def get_tokenizer(self):
         """
         Utility to get the matching tokenizer.
         """
-        return BartTokenizer.from_pretrained(model_name)
+        return self.tokenizer
 
     def generate(
         self, question: str, context: str, max_length: int = 64, num_beams: int = 4
