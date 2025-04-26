@@ -3,6 +3,7 @@ import torch.nn.functional as F
 import torch.nn as nn
 import faiss
 import numpy as np
+from datasets import load_dataset
 
 VD_PATH = ""
 DOCUMENT_PATH = ""
@@ -47,6 +48,7 @@ class Retriever(nn.Module):
         print(self.index.is_trained)
         self.index.add(xb)                  
         print(self.index.ntotal)
+        self.corpus = load_dataset("rag-datasets/rag-mini-bioasq", "text-corpus")['passages']
 
 
     def forward(self, x, k):
@@ -60,12 +62,12 @@ class Retriever(nn.Module):
         # I is the indices of the top k documents
         D, I = self.index.search(xq, k)  
 
-        docs = get_docs_from_indices(I)
+        docs = ""
+        for i in I:
+            docs+=self.corpus[i]
 
         return x + docs
-        
-def get_docs_from_indices(I, DOCUMENT_PATH):
-    return ""
+
 
 
 class Generator(nn.Module):
