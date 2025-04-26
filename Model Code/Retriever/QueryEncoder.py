@@ -17,8 +17,8 @@ class BertQueryEncoder(nn.Module):
         cls_embeddings = bert_output.last_hidden_state[:, 0, :].squeeze().cpu()
         return cls_embeddings
 
-model = BertQueryEncoder()
-print(model.forward("Hello cruel world"))
+# torch.save(model.state_dict(), "bert_query_encoder.pth")
+# model.load_state_dict(torch.load("bert_query_encoder.pth"))
 
         
         
