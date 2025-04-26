@@ -13,3 +13,4 @@ https://huggingface.co/datasets/rag-datasets/rag-mini-bioasq
 - eval script
   - Retrieval Quality (internal analysis)	Top-K Recall
   - QA BLEU-1 and ROUGE-L
+- training script
