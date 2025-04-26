@@ -4,6 +4,7 @@ import torch.nn as nn
 import faiss
 import numpy as np
 from datasets import load_dataset
+from QueryEncoder import BERTQueryEncoder
 
 class Retriever(nn.Module):
     def __init__(self):
@@ -19,6 +20,7 @@ class Retriever(nn.Module):
         print(self.index.ntotal)
         self.corpus = load_dataset("rag-datasets/rag-mini-bioasq", "text-corpus")['passages']
 
+        self.q = BERTQueryEncoder()
 
     def forward(self, x, k):
         """
@@ -26,7 +28,7 @@ class Retriever(nn.Module):
         """
         # TODO
         # This should be the embedding of the query:
-        xq = np.random.random((1, self.d)).astype('float32')
+        xq = self.q(x)
 
         # I is the indices of the top k documents
         D, I = self.index.search(xq, k)  
