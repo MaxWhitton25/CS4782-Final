@@ -4,7 +4,7 @@ import torch.nn as nn
 import faiss
 import numpy as np
 from datasets import load_dataset
-from generator import Generator
+from src.generator.generator import Generator
 from retriever import Retriever
 
 VD_PATH = ""
