@@ -4,6 +4,8 @@ import torch.nn as nn
 import faiss
 import numpy as np
 from datasets import load_dataset
+from generator import Generator
+from retriever import Retriever
 
 VD_PATH = ""
 DOCUMENT_PATH = ""
@@ -36,15 +38,3 @@ class EndtoEndRAG(nn.Module):
 
         pass
 
-class Generator(nn.Module):
-    def __init__(self):
-        """
-        """
-        # TODO
-
-    def forward(self, x):
-        """
-        
-        """
-        # TODO
-        #dummy test
