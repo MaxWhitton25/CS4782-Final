@@ -52,3 +52,4 @@ class Generator(nn.Module):
         
         """
         # TODO
+        #dummy test
