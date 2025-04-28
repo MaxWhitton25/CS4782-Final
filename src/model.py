@@ -36,7 +36,7 @@ class EndtoEndRAG(nn.Module):
             List[str]: Generated answers for each retrieved document.
         """
         # Retrieve top-k documents for the query
-        docs = self.retriever(query, k)
+        docs, doc_probs = self.retriever(query, k)
 
         # Generate an answer for each (query, doc) pair
         answers = []

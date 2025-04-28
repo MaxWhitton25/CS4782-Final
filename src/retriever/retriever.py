@@ -14,7 +14,7 @@ class Retriever(nn.Module):
         super().__init__()
         xb = np.load(vd_path)
         self.d = xb.shape[1]
-        self.index = faiss.IndexFlatL2(self.d)
+        self.index = faiss.IndexFlatIP(self.d)
         print(self.index.is_trained)
         self.index.add(xb)
         print(self.index.ntotal)
@@ -32,7 +32,9 @@ class Retriever(nn.Module):
 
         # I is the indices of the top k documents
         D, I = self.index.search(xq, k)
+        probs = F.softmax(D, dim=-1)
+
 
         docs = self.corpus[I]
 
-        return x + docs
+        return docs, probs

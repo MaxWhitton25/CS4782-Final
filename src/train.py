@@ -13,7 +13,7 @@ EPOCHS = 5
 ds = load_dataset("rag-datasets/rag-mini-bioasq", "question-answer-passages")
 
 # Split the dataset into train and test sets
-train_test_split = ds['train'].train_test_split(test_size=0.2)
+train_test_split = ds['test'].train_test_split(test_size=0.2)
 
 # Access the train and test sets
 train_dataset = train_test_split['train']
