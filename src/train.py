@@ -1,4 +1,3 @@
-from model import EndtoEndRAG
 from datasets import load_dataset
 import torch
 import torch.nn as nn
@@ -6,31 +5,47 @@ import torch.optim as optim
 from torchvision import datasets, transforms
 from torch.utils.data import DataLoader
 from transformers import DefaultDataCollator
+import sys
+import os
+
+sys.path.append(os.path.join(os.path.dirname(__file__), '../src'))
+
+from model import EndtoEndRAG
 
 
 EPOCHS = 5
 
+print("Loading dataset...")
 ds = load_dataset("rag-datasets/rag-mini-bioasq", "question-answer-passages")
+full_dataset = ds["test"]  # use entire dataset
 
-# Split the dataset into train and test sets
-train_test_split = ds['test'].train_test_split(test_size=0.2)
+# Split into 80% train / 20% test
+split = full_dataset.train_test_split(test_size=0.2, seed=42)
+train_dataset = split["train"]
+test_dataset  = split["test"]
 
-# Access the train and test sets
-train_dataset = train_test_split['train']
-test_dataset = train_test_split['test']
+def my_collate_fn(examples):
+    default_collator = DefaultDataCollator(return_tensors="pt")
+
+    questions = [ex["question"] for ex in examples]
+    answers   = [ex["answer"]   for ex in examples]
+    batch = default_collator(examples)
+    batch["question"] = questions
+    batch["answer"]   = answers
+    return batch
 
 train_dataloader = DataLoader(
     train_dataset, 
     batch_size=32, 
     shuffle=True, 
-    collate_fn=DefaultDataCollator(return_tensors="pt")
+    collate_fn=my_collate_fn
 )
 
 test_dataloader = DataLoader(
     test_dataset, 
     batch_size=32, 
     shuffle=True, 
-    collate_fn=DefaultDataCollator(return_tensors="pt")
+    collate_fn=my_collate_fn
 )
 
 
@@ -41,16 +56,15 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model.to(device)
 
 
+
 for epoch in range(EPOCHS):
     model.train()
     total_loss = 0
 
     for batch in train_dataloader:
-        # Move batch to device
-        batch = {k: v.to(device) for k, v in batch.items()}
         
         # Forward pass
-        outputs = model(batch["question"])  
+        outputs, scores = model(batch["question"])  
         logits = outputs.logits  
         
         loss = loss_fn(logits, batch["answer"])  

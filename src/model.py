@@ -7,7 +7,8 @@ from datasets import load_dataset
 from generator.generator import RAGGenerator
 from retriever.retriever import Retriever
 
-VD_PATH = ""
+VD_PATH = "C:\\Users\\maxwh\\OneDrive\\Documents\\CS4782-\\Embeddings\\passage_embedding\\bioasq_passage_embeddings.pt"
+
 DOCUMENT_PATH = ""
 
 
@@ -23,7 +24,7 @@ class EndtoEndRAG(nn.Module):
         """
         super().__init__()
         self.retriever = Retriever(
-            vd_path=vd_path, document_path=document_path, device=device
+            vd_path=VD_PATH, document_path=document_path, device=device
         )
         self.generator = RAGGenerator(device=device)
 

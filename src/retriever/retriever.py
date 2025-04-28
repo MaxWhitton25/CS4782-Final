@@ -4,7 +4,12 @@ import torch.nn as nn
 import faiss
 import numpy as np
 from datasets import load_dataset
-from retriever.QueryEncoder import BertQueryEncoder
+import sys
+import os
+
+sys.path.append(os.path.join(os.path.dirname(__file__), '../../src/retriever'))
+
+from QueryEncoder import BertQueryEncoder
 
 
 class Retriever(nn.Module):
@@ -12,7 +17,11 @@ class Retriever(nn.Module):
         """ """
         # TODO: initialize the database and the query encoder
         super().__init__()
-        xb = np.load(vd_path)
+
+        data = torch.load(vd_path)
+        tensor = data['embeddings'] 
+        
+        xb = tensor.cpu().numpy()
         self.d = xb.shape[1]
         self.index = faiss.IndexFlatIP(self.d)
         print(self.index.is_trained)
@@ -29,6 +38,7 @@ class Retriever(nn.Module):
         # TODO
         # This should be the embedding of the query:
         xq = self.q(x)
+        print(xq.shape)
 
         # I is the indices of the top k documents
         D, I = self.index.search(xq, k)
