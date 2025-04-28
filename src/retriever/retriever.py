@@ -4,7 +4,7 @@ import torch.nn as nn
 import faiss
 import numpy as np
 from datasets import load_dataset
-from QueryEncoder import BERTQueryEncoder
+from retriever.QueryEncoder import BertQueryEncoder
 
 
 class Retriever(nn.Module):
@@ -22,7 +22,7 @@ class Retriever(nn.Module):
             "passages"
         ]
 
-        self.q = BERTQueryEncoder()
+        self.q = BertQueryEncoder()
 
     def forward(self, x, k):
         """ """
