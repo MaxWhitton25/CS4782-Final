@@ -7,7 +7,7 @@ from datasets import load_dataset
 from generator.generator import RAGGenerator
 from retriever.retriever import Retriever
 
-VD_PATH = "C:\\Users\\maxwh\\OneDrive\\Documents\\CS4782-\\Embeddings\\passage_embedding\\bioasq_passage_embeddings.pt"
+VD_PATH = "Embeddings/bioasq_passage_embeddings.pt"
 
 DOCUMENT_PATH = ""
 
