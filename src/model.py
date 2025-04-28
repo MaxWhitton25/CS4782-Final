@@ -27,7 +27,7 @@ class EndtoEndRAG(nn.Module):
         )
         self.generator = RAGGenerator(device=device)
 
-    def forward(self, query, k=5):
+    def forward(self, query, k=5, device = "cpu"):
         """
         Args:
             query (str): The input query.
@@ -35,13 +35,25 @@ class EndtoEndRAG(nn.Module):
         Returns:
             List[str]: Generated answers for each retrieved document.
         """
-        # Retrieve top-k documents for the query
-        docs, doc_probs = self.retriever(query, k)
+        if not self.training:
+            # Retrieve top-k documents for the query
+            docs, _ = self.retriever(query, k)
 
-        # Generate an answer for each (query, doc) pair
-        answers = []
-        for doc in docs:
-            answer = self.generator.generate(question=query, context=doc)
-            answers.append(answer)
+            # Generate an answer for each (query, doc) pair
+            answers = []
+            for doc in docs:
+                answer = self.generator.generate(question=query, context=doc)
+                answers.append(answer)
 
-        return answers
+            return answers
+        else:
+            overall_loss = 0
+
+            DUMMY_QUESTION = " "
+            DUMMY_TARGET = " "
+            docs, doc_probs = self.retriever(query, k)
+            losses = []
+            for doc in docs:
+                losses.append(self.generator.train_run(f"{DUMMY_QUESTION} {self.tokenizer.eos_token} {doc}", DUMMY_TARGET, device))
+
+            return overall_loss

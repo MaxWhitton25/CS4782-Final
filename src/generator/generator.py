@@ -53,6 +53,33 @@ class RAGGenerator(nn.Module):
         Utility to get the matching tokenizer.
         """
         return self.tokenizer
+    
+    def train_run(self, input_text, target_text, device):
+        input = self.tokenizer(
+            input_text,
+            return_tensors="pt",
+            truncation=True,
+            padding=True,
+        )
+        target = self.tokenizer(
+            target_text,
+            return_tensors="pt",
+            truncation=True,
+            padding=True,
+        )
+        input_ids = input["input_ids"].to(device)
+        attention_mask = input["attention_mask"].to(device)
+        target_ids = target["input_ids"].to(device)
+
+        output = self.model(
+            input_ids = input_ids,
+            attention_mask = attention_mask,
+            labels = target_ids,
+        )
+
+        loss= output.loss
+
+        return loss
 
     def generate(
         self, question: str, context: str, max_length: int = 64, num_beams: int = 4
