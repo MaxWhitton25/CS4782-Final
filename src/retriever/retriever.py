@@ -23,7 +23,7 @@ class Retriever(nn.Module):
         
         xb = tensor.cpu().numpy()
         self.d = xb.shape[1]
-        self.index = faiss.IndexFlatIP(self.d)
+        self.index = faiss.IndexFlatL2(self.d)
         print(self.index.is_trained)
         self.index.add(xb)
         print(self.index.ntotal)
@@ -41,10 +41,8 @@ class Retriever(nn.Module):
         print(xq.shape)
 
         # I is the indices of the top k documents
-        D, I = self.index.search(xq, k)
-        probs = F.softmax(D, dim=-1)
-
-
-        docs = self.corpus[I]
-
-        return docs, probs
+        D, I = self.index.search(xq.detach(), k)
+        
+        docs = [[self.corpus[int(i)] for i in row] for row in I]
+        print(docs)
+        return docs
