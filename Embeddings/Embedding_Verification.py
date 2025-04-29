@@ -2,8 +2,8 @@
 """
 Embedding_Verification.py
 
-Build a FAISS index over the ~5K Wikipedia pages used in FEVER,
-*streaming* wiki_dpr and early-stopping as soon as we've covered each page once.
+Build a FAISS GPU index over the ~5K Wikipedia pages used in FEVER,
+streaming wiki_dpr and early-stopping as soon as we've covered each page once.
 """
 
 import os
@@ -43,9 +43,20 @@ def embed_passage(text, tokenizer, model, device):
         out = model(**inputs)
     return out.last_hidden_state[:, 0, :].cpu().numpy().squeeze(0)
 
+def move_index_to_gpu(cpu_index):
+    """
+    Move a FAISS index to GPU if possible.
+    """
+    if hasattr(faiss, "StandardGpuResources"):
+        res = faiss.StandardGpuResources()
+        gpu_index = faiss.index_cpu_to_gpu(res, 0, cpu_index)
+        return gpu_index
+    else:
+        return cpu_index
+
 def main():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    print(f"Using device: {device}\n")
+    print(f"Using device for BERT: {device}\n")
 
     print("Extracting FEVER page titles…")
     fever_pages = extract_fever_pages()
@@ -75,27 +86,37 @@ def main():
             embeddings.append(emb)
             ids.append(item["id"])
             remaining.remove(title)
-            # once we've covered every page, break
             if not remaining:
                 break
 
     print(f"\n → Embedded {len(ids)} passages, covering all pages.\n")
 
-    matrix = np.vstack(embeddings)
+    matrix = np.vstack(embeddings).astype('float32')
     faiss.normalize_L2(matrix)
+
     d = matrix.shape[1]
-    index = faiss.IndexFlatIP(d)
+    print(f"Building FAISS index of dimension {d}…")
+    
+    # Create CPU index first
+    cpu_index = faiss.IndexFlatIP(d)
+    # Move to GPU if possible
+    index = move_index_to_gpu(cpu_index)
     index.add(matrix)
+
     print(f"Built FAISS index with {index.ntotal} vectors.\n")
+
+    print("Moving index back to CPU for saving…")
+    cpu_final_index = faiss.index_gpu_to_cpu(index)
 
     idx_path = "fever_pages.index"
     meta_path = "fever_pages_ids.json"
     print(f"Saving index to {idx_path} and IDs to {meta_path}…")
-    faiss.write_index(index, idx_path)
+    faiss.write_index(cpu_final_index, idx_path)
+
     with open(meta_path, "w") as f:
         json.dump(ids, f)
 
-    print("\nDone! You now have a tiny index (~5K vectors) instead of 50M+.")
+    print("\n Done creating FAISS index (~5K vectors).")
 
 if __name__ == "__main__":
     main()
