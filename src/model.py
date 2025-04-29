@@ -42,12 +42,13 @@ class EndtoEndRAG(nn.Module):
 
         if labels is not None:
             # Generate outputs
-            outputs = self.generator.generate(query, docs, labels)
+            outputs, generator_query_document_losses = self.generator.generate(query, docs, labels)
+            generator_query_document_losses = generator_query_document_losses.view_as(doc_probs)
 
-            # Get losses
-            generator_loss = outputs.loss
-            retriever_loss = -torch.log(doc_probs).mean()
-            total_loss = generator_loss + retriever_loss
+            #take logs and then add and then exponentiate to multiply without resulting in overflow
+            log_doc_probs_minus_generator_query_document_losses = torch.exp(torch.log(doc_probs) - generator_query_document_losses)
+            negative_log_likelihood_of_sum = -torch.log(torch.sum(log_doc_probs_minus_generator_query_document_losses, dim=-1))
+            total_loss = torch.mean(negative_log_likelihood_of_sum)
 
             outputs.loss = total_loss
 
