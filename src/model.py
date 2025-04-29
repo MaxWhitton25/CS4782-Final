@@ -1,19 +1,15 @@
-import torch
 import torch.nn.functional as F
 import torch.nn as nn
-import faiss
 import numpy as np
-from datasets import load_dataset
+from datasets import Dataset
 from generator.generator import RAGGenerator
 from retriever.retriever import Retriever
-
-VD_PATH = "Embeddings/bioasq_passage_embeddings.pt"
 
 DOCUMENT_PATH = ""
 
 
 class EndtoEndRAG(nn.Module):
-    def __init__(self, vd_path=VD_PATH, document_path=DOCUMENT_PATH, device="cpu"):
+    def __init__(self, vd_path: str, dataset: Dataset, device="cpu"):
         """
         Initializes the RAG model with a retriever and a generator.
 
@@ -23,12 +19,10 @@ class EndtoEndRAG(nn.Module):
             device (str): Device to run the models on ('cpu' or 'cuda').
         """
         super().__init__()
-        self.retriever = Retriever(
-            vd_path=VD_PATH, document_path=document_path, device=device
-        )
+        self.retriever = Retriever(vd_path=vd_path, dataset=dataset, device=device)
         self.generator = RAGGenerator(device=device)
 
-    def forward(self, query, k=5, device = "cpu"):
+    def forward(self, query, k=5, device="cpu"):
         """
         Args:
             query (str): The input query.
@@ -55,6 +49,12 @@ class EndtoEndRAG(nn.Module):
             docs, doc_probs = self.retriever(query, k)
             losses = []
             for doc in docs:
-                losses.append(self.generator.train_run(f"{DUMMY_QUESTION} {self.tokenizer.eos_token} {doc}", DUMMY_TARGET, device))
+                losses.append(
+                    self.generator.train_run(
+                        f"{DUMMY_QUESTION} {self.tokenizer.eos_token} {doc}",
+                        DUMMY_TARGET,
+                        device,
+                    )
+                )
 
             return overall_loss
