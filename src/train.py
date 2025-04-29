@@ -36,7 +36,7 @@ def my_collate_fn(examples):
 
 train_dataloader = DataLoader(
     train_dataset, 
-    batch_size=32, 
+    batch_size=2, 
     shuffle=True, 
     collate_fn=my_collate_fn
 )
@@ -64,10 +64,11 @@ for epoch in range(EPOCHS):
     for batch in train_dataloader:
         
         # Forward pass
+        print(batch["question"])
         outputs, scores = model(batch["question"])  
-        logits = outputs.logits  
+        print(outputs)
         
-        loss = loss_fn(logits, batch["answer"])  
+        loss = loss_fn(outputs, batch["answer"])  
         # Backward pass
         optimizer.zero_grad()
         loss.backward()

@@ -4,8 +4,7 @@ import numpy as np
 from datasets import Dataset
 from generator.generator import RAGGenerator
 from retriever.retriever import Retriever
-
-DOCUMENT_PATH = ""
+import nltk
 
 
 class EndtoEndRAG(nn.Module):
@@ -21,8 +20,9 @@ class EndtoEndRAG(nn.Module):
         super().__init__()
         self.retriever = Retriever(vd_path=vd_path, dataset=dataset, device=device)
         self.generator = RAGGenerator(device=device)
+        self.tokenizer = nltk.word_tokenize
 
-    def forward(self, query, k=5, device="cpu"):
+    def forward(self, query, k=1, device="cpu"):
         """
         Args:
             query (str): The input query.
@@ -47,14 +47,8 @@ class EndtoEndRAG(nn.Module):
             DUMMY_QUESTION = " "
             DUMMY_TARGET = " "
             docs, doc_probs = self.retriever(query, k)
-            losses = []
-            for doc in docs:
-                losses.append(
-                    self.generator.train_run(
-                        f"{DUMMY_QUESTION} {self.tokenizer.eos_token} {doc}",
-                        DUMMY_TARGET,
-                        device,
-                    )
-                )
-
-            return overall_loss
+            # losses = []
+            # for doc in docs:
+            #     losses.append(self.generator.train_run(f"{DUMMY_QUESTION} {self.tokenizer.eos_token} {doc}", DUMMY_TARGET, device))
+            out = self.generator.generate(query, docs)
+            return out, doc_probs

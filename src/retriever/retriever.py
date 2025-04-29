@@ -9,6 +9,7 @@ import os
 from datasets import Dataset
 
 sys.path.append(os.path.join(os.path.dirname(__file__), "../../src/retriever"))
+vd_path = "Embeddings\passage_embedding\bioasq_passage_embeddings.pt"
 
 from QueryEncoder import BertQueryEncoder
 
@@ -60,4 +61,4 @@ class Retriever(nn.Module):
 
         docs = [[self.dataset[int(i)] for i in row] for row in I]
         print(docs)
-        return docs
+        return docs, probs
