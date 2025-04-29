@@ -5,50 +5,55 @@ from datasets import Dataset
 from generator.generator import RAGGenerator
 from retriever.retriever import Retriever
 import nltk
+from typing import List, Optional
+import torch
 
 
 class EndtoEndRAG(nn.Module):
-    def __init__(self, vd_path: str, dataset: Dataset, device="cpu"):
+    def __init__(self, vd_path: str, corpus: Dataset, device="cpu"):
         """
         Initializes the RAG model with a retriever and a generator.
 
         Args:
             vd_path (str): Path to the vector database (for retriever).
-            document_path (str): Path to the document store.
+            corpus (Dataset): Dataset of passages.
             device (str): Device to run the models on ('cpu' or 'cuda').
         """
         super().__init__()
-        self.retriever = Retriever(vd_path=vd_path, dataset=dataset, device=device)
+        self.retriever = Retriever(vd_path=vd_path, corpus=corpus, device=device)
         self.generator = RAGGenerator(device=device)
         self.tokenizer = nltk.word_tokenize
 
-    def forward(self, query, k=1, device="cpu"):
+    def forward(
+        self,
+        query: List[str],
+        labels: Optional[List[str]] = None,
+        k: int = 1,
+    ):
         """
         Args:
-            query (str): The input query.
+            query (List[str]): The input queries.
+            labels (List[str], optional): The input labels.
             k (int): Number of documents to retrieve.
-        Returns:
-            List[str]: Generated answers for each retrieved document.
+            device (str): Device to run the models on ('cpu' or 'cuda').
         """
-        if not self.training:
-            # Retrieve top-k documents for the query
-            docs, _ = self.retriever(query, k)
+        # Retrieve top-k documents for each query
+        docs, doc_probs = self.retriever(query, k)
 
-            # Generate an answer for each (query, doc) pair
-            answers = []
-            for doc in docs:
-                answer = self.generator.generate(question=query, context=doc)
-                answers.append(answer)
+        if labels is not None:
+            # Generate outputs
+            outputs = self.generator.generate(query, docs, labels)
 
-            return answers
+            # Get losses
+            generator_loss = outputs.loss
+            retriever_loss = -torch.log(doc_probs).mean()
+            total_loss = generator_loss + retriever_loss
+
+            outputs.loss = total_loss
+
+            return outputs, doc_probs
         else:
-            overall_loss = 0
+            # Generate outputs
+            outputs = self.generator.generate(query, docs)
 
-            DUMMY_QUESTION = " "
-            DUMMY_TARGET = " "
-            docs, doc_probs = self.retriever(query, k)
-            # losses = []
-            # for doc in docs:
-            #     losses.append(self.generator.train_run(f"{DUMMY_QUESTION} {self.tokenizer.eos_token} {doc}", DUMMY_TARGET, device))
-            out = self.generator.generate(query, docs)
-            return out, doc_probs
+            return outputs, doc_probs
