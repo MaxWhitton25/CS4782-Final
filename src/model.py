@@ -9,7 +9,7 @@ from retriever.retriever import Retriever
 import nltk
 
 
-VD_PATH = "C:\\Users\\maxwh\\OneDrive\\Documents\\CS4782-\\Embeddings\\passage_embedding\\bioasq_passage_embeddings.pt"
+VD_PATH = "Embeddings/bioasq_passage_embeddings.pt"
 
 DOCUMENT_PATH = ""
 
