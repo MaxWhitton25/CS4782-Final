@@ -1,12 +1,12 @@
 from transformers.models.bart import BartForConditionalGeneration, BartTokenizer
 import torch
 import torch.nn as nn
-from typing import Optional
+from typing import Optional, List
 
 
 class RAGGenerator(nn.Module):
     """
-    RAG Generator module using BART BASE, suitable for integration in larger models.
+    RAG Generator module using BART BASE.
     """
 
     def __init__(
@@ -53,60 +53,59 @@ class RAGGenerator(nn.Module):
         Utility to get the matching tokenizer.
         """
         return self.tokenizer
-    
-    def train_run(self, input_text, target_text, device):
-        input = self.tokenizer(
-            input_text,
-            return_tensors="pt",
-            truncation=True,
-            padding=True,
-        )
-        target = self.tokenizer(
-            target_text,
-            return_tensors="pt",
-            truncation=True,
-            padding=True,
-        )
-        input_ids = input["input_ids"].to(device)
-        attention_mask = input["attention_mask"].to(device)
-        target_ids = target["input_ids"].to(device)
-
-        output = self.model(
-            input_ids = input_ids,
-            attention_mask = attention_mask,
-            labels = target_ids,
-        )
-
-        loss= output.loss
-
-        return loss
 
     def generate(
-        self, question: str, context: str, max_length: int = 64, num_beams: int = 4
-    ) -> str:
+        self,
+        query: List[str],
+        doc_list: List[List[str]],
+        labels: Optional[List[str]] = None,
+        max_length: int = 512,
+        num_beams: int = 4,
+    ):
         """
         Generate an answer given a question and context.
         Args:
-            question (str): The input question.
-            context (str): The retrieved context/document.
+            query (List[str]): The input queries.
+            doc_list (List[List[str]]): The retrieved context/documents for each query.
+            labels (List[str], optional): The input labels.
             max_length (int): Max length of generated answer.
             num_beams (int): Beam search width.
-        Returns:
-            str: Generated answer.
         """
         # Concatenate question and context as input
-        input_text = f"{question} {self.tokenizer.eos_token} {context}"
+        input_texts = []
+        for q, docs in zip(query, doc_list):
+            for doc in docs:
+                input_texts.append(f"{q} {self.tokenizer.eos_token} {doc}")
+        # Tokenize inputs
         inputs = self.tokenizer(
-            input_text,
+            input_texts,
             return_tensors="pt",
+            padding=True,
             truncation=True,
-            max_length=512,
-        )
-        inputs = {k: v.to(self.device) for k, v in inputs.items()}
-        output_ids = self.model.generate(
-            **inputs,
             max_length=max_length,
-            num_beams=num_beams,
-            early_stopping=True,
-        )
-        return self.tokenizer.decode(output_ids[0], skip_special_tokens=True)
+        ).to(self.device)
+
+        if labels is not None:
+            # Tokenize labels
+            label_inputs = self.tokenizer(
+                labels,
+                return_tensors="pt",
+                padding=True,
+                truncation=True,
+                max_length=max_length,
+            ).to(self.device)
+
+            # Forward pass with labels for training
+            outputs = self.model(
+                input_ids=inputs["input_ids"],
+                attention_mask=inputs["attention_mask"],
+                labels=label_inputs["input_ids"],
+            )
+            return outputs
+        else:
+            # Forward pass without labels for inference
+            outputs = self.model(
+                input_ids=inputs["input_ids"],
+                attention_mask=inputs["attention_mask"],
+            )
+            return outputs
