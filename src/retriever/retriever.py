@@ -9,17 +9,16 @@ import os
 from datasets import Dataset
 
 sys.path.append(os.path.join(os.path.dirname(__file__), "../../src/retriever"))
-vd_path = "Embeddings\passage_embedding\bioasq_passage_embeddings.pt"
 
 from QueryEncoder import BertQueryEncoder
 
 
 class Retriever(nn.Module):
-    def __init__(self, vd_path: str, dataset: Dataset, device: str = "cpu"):
+    def __init__(self, vd_path: str, corpus: Dataset, device: str = "cpu"):
         """
         Args:
             vd_path: path to the vector database - should be a faiss index
-            dataset: dataset of documents
+            corpus: dataset of passages
             device: device to run the model on
         """
         # TODO: initialize the database and the query encoder
@@ -45,20 +44,19 @@ class Retriever(nn.Module):
         else:
             raise ValueError(f"Unsupported file type: {vd_path.split('.')[-1]}")
 
-        self.dataset = dataset
+        self.corpus = corpus
 
         self.q = BertQueryEncoder()
 
-    def forward(self, x, k):
+    def forward(self, x, k=1):
         """ """
         # TODO
         # This should be the embedding of the query:
         xq = self.q(x)
-        print(xq.shape)
 
         # I is the indices of the top k documents
         D, I = self.index.search(xq.detach(), k)
-
-        docs = [[self.dataset[int(i)] for i in row] for row in I]
-        print(docs)
+        D = torch.from_numpy(D)
+        probs = F.softmax(D, dim=-1)
+        docs = [[self.corpus[int(i)] for i in row] for row in I]
         return docs, probs
