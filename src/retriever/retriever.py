@@ -33,11 +33,11 @@ class Retriever(nn.Module):
             print(f"Index dimension: {self.index.d}")
         elif vd_path.endswith(".pt"):
             data = torch.load(vd_path)
-            embeddings = data["embeddings"]
+            self.embeddings = data["embeddings"]
             # Convert to FAISS index
             print("\nConverting to FAISS index...")
-            embeddings_np = embeddings.numpy().astype("float32")
-            dimension = embeddings.shape[1]
+            embeddings_np = self.embeddings.numpy().astype("float32")
+            dimension = self.embeddings.shape[1]
             index = faiss.IndexFlatL2(dimension)
             index.add(embeddings_np)
             self.index = index
@@ -56,7 +56,13 @@ class Retriever(nn.Module):
 
         # I is the indices of the top k documents
         D, I = self.index.search(xq.detach(), k)
-        D = torch.from_numpy(D)
+        # #this should really always exist but dummy fix for now
+        if hasattr(self, "embeddings"):
+            I_pt = torch.from_numpy(I)
+            embedding_vectors = self.embeddings[I_pt]
+            xq_expanded = xq.unsqueeze(1)
+            D = F.cosine_similarity(xq_expanded, embedding_vectors, dim=-1)
+
         probs = F.softmax(D, dim=-1)
         docs = [[self.corpus[int(i)] for i in row] for row in I]
         return docs, probs

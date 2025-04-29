@@ -22,7 +22,7 @@ qa_pairs = load_dataset("rag-datasets/rag-mini-bioasq", "question-answer-passage
 corpus = load_dataset("rag-datasets/rag-mini-bioasq", "text-corpus")["passages"]
 print(qa_pairs)
 full_dataset = qa_pairs["test"]  # use entire dataset
-vd_path = "Embeddings/bioasq_passage_embeddings.faiss"
+vd_path = "Embeddings/bioasq_passage_embeddings.pt"
 
 # Split into 80% train / 20% test
 split = full_dataset.train_test_split(test_size=0.2, seed=42)
