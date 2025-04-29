@@ -9,7 +9,7 @@ from retriever.retriever import Retriever
 import nltk
 
 
-VD_PATH = "Embeddings/bioasq_passage_embeddings.pt"
+VD_PATH = 'Embeddings\passage_embedding\bioasq_passage_embeddings.pt'
 
 DOCUMENT_PATH = ""
 
@@ -31,7 +31,7 @@ class EndtoEndRAG(nn.Module):
         self.generator = RAGGenerator(device=device)
         self.tokenizer = nltk.word_tokenize
 
-    def forward(self, query, k=5, device = "cpu"):
+    def forward(self, query, k=1, device = "cpu"):
         """
         Args:
             query (str): The input query.
@@ -59,5 +59,5 @@ class EndtoEndRAG(nn.Module):
             # losses = []
             # for doc in docs:
             #     losses.append(self.generator.train_run(f"{DUMMY_QUESTION} {self.tokenizer.eos_token} {doc}", DUMMY_TARGET, device))
-            out = self.generator()
-            return "", doc_probs
+            out = self.generator.generate(query, docs)
+            return out, doc_probs

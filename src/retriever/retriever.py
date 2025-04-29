@@ -9,6 +9,7 @@ import os
 
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '../../src/retriever'))
+vd_path = 'Embeddings\passage_embedding\bioasq_passage_embeddings.pt'
 
 from QueryEncoder import BertQueryEncoder
 
@@ -19,7 +20,7 @@ class Retriever(nn.Module):
         # TODO: initialize the database and the query encoder
         super().__init__()
 
-        data = torch.load(vd_path)
+        data = torch.load('Embeddings\\passage_embedding\\bioasq_passage_embeddings.pt')
         tensor = data['embeddings'] 
         
         xb = tensor.cpu().numpy()
