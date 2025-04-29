@@ -94,12 +94,14 @@ class RAGGenerator(nn.Module):
                 truncation=True,
                 max_length=max_length,
             ).to(self.device)
+            repeats = torch.tensor([len(docs) for docs in doc_list], device=self.device)
+            repeated_label_input_ids = torch.repeat_interleave(label_inputs["input_ids"], repeats, dim=0).to(self.device)
 
             # Forward pass with labels for training
             outputs = self.model(
                 input_ids=inputs["input_ids"],
                 attention_mask=inputs["attention_mask"],
-                labels=label_inputs["input_ids"],
+                labels=repeated_label_input_ids,
             )
             return outputs
         else:

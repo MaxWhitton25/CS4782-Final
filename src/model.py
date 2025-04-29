@@ -28,7 +28,7 @@ class EndtoEndRAG(nn.Module):
         self,
         query: List[str],
         labels: Optional[List[str]] = None,
-        k: int = 1,
+        k: int = 2,
     ):
         """
         Args:
