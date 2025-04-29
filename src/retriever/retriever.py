@@ -7,6 +7,7 @@ from datasets import load_dataset
 import sys
 import os
 
+
 sys.path.append(os.path.join(os.path.dirname(__file__), '../../src/retriever'))
 
 from QueryEncoder import BertQueryEncoder
@@ -32,7 +33,7 @@ class Retriever(nn.Module):
         ]
 
         self.q = BertQueryEncoder()
-
+        
     def forward(self, x, k):
         """ """
         # TODO
@@ -42,7 +43,9 @@ class Retriever(nn.Module):
 
         # I is the indices of the top k documents
         D, I = self.index.search(xq.detach(), k)
-        
+        D = torch.from_numpy(D)
+        probs = F.softmax(D, dim=-1)
         docs = [[self.corpus[int(i)] for i in row] for row in I]
         print(docs)
-        return docs
+        return docs, probs
+    

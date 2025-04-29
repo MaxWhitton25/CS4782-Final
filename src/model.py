@@ -6,6 +6,8 @@ import numpy as np
 from datasets import load_dataset
 from generator.generator import RAGGenerator
 from retriever.retriever import Retriever
+import nltk
+
 
 VD_PATH = "C:\\Users\\maxwh\\OneDrive\\Documents\\CS4782-\\Embeddings\\passage_embedding\\bioasq_passage_embeddings.pt"
 
@@ -27,6 +29,7 @@ class EndtoEndRAG(nn.Module):
             vd_path=VD_PATH, document_path=document_path, device=device
         )
         self.generator = RAGGenerator(device=device)
+        self.tokenizer = nltk.word_tokenize
 
     def forward(self, query, k=5, device = "cpu"):
         """
@@ -53,8 +56,8 @@ class EndtoEndRAG(nn.Module):
             DUMMY_QUESTION = " "
             DUMMY_TARGET = " "
             docs, doc_probs = self.retriever(query, k)
-            losses = []
-            for doc in docs:
-                losses.append(self.generator.train_run(f"{DUMMY_QUESTION} {self.tokenizer.eos_token} {doc}", DUMMY_TARGET, device))
-
-            return overall_loss
+            # losses = []
+            # for doc in docs:
+            #     losses.append(self.generator.train_run(f"{DUMMY_QUESTION} {self.tokenizer.eos_token} {doc}", DUMMY_TARGET, device))
+            out = self.generator()
+            return "", doc_probs
