@@ -46,7 +46,7 @@ class Retriever(nn.Module):
 
         self.corpus = corpus
 
-        self.q = BertQueryEncoder()
+        self.q = BertQueryEncoder().to(device)
 
     def forward(self, x, k=1):
         """ """
