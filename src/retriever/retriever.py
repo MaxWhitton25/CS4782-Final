@@ -45,6 +45,7 @@ class Retriever(nn.Module):
             raise ValueError(f"Unsupported file type: {vd_path.split('.')[-1]}")
 
         self.corpus = corpus
+        self.device = device
 
         self.q = BertQueryEncoder().to(device)
 
@@ -65,4 +66,4 @@ class Retriever(nn.Module):
 
         probs = F.softmax(D, dim=-1)
         docs = [[self.corpus[int(i)] for i in row] for row in I]
-        return docs, probs
+        return docs, probs.to(self.device)

@@ -109,7 +109,7 @@ class RAGGenerator(nn.Module):
             generator_losses = generator_loss_fn(outputs.logits.view(B * T, V), repeated_label_input_ids.view(B * T)).view(B, T)
             generator_query_document_losses = torch.mean(generator_losses, -1, keepdim=False)
 
-            return outputs, generator_query_document_losses
+            return outputs, generator_query_document_losses.to(self.device)
         else:
             # Forward pass without labels for inference
             outputs = self.model(
