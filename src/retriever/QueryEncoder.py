@@ -7,7 +7,7 @@ class BertQueryEncoder(nn.Module):
         super(BertQueryEncoder, self).__init__()
         self.device = device or torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.bert_tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
-        self.bert_model = BertModel.from_pretrained('bert-base-uncased')
+        self.bert_model = BertModel.from_pretrained(pretrained_bert_model_name).to(self.device)
 
     def forward(self, text):
         tokenized_inputs = self.bert_tokenizer(text, return_tensors="pt", padding=True, truncation=True, max_length=512)
