@@ -16,6 +16,7 @@ from model import EndtoEndRAG
 EPOCHS = 5
 BATCH_SIZE = 8
 LEARNING_RATE = 1e-5
+K_VALUE = 5
 
 print("Loading dataset...")
 qa_pairs = load_dataset("rag-datasets/rag-mini-bioasq", "question-answer-passages")
@@ -89,7 +90,7 @@ def evaluate(model, dataloader, device):
                 for k, v in batch.items()
             }
 
-            outputs, scores = model(batch["question"], batch["answer"])
+            outputs, scores = model(batch["question"], batch["answer"], K_VALUE)
             loss = outputs.loss
             total_loss += loss.item()
 
