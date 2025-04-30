@@ -48,9 +48,9 @@ test_dataloader = DataLoader(
     test_dataset, batch_size=BATCH_SIZE, shuffle=False, collate_fn=my_collate_fn
 )
 
-model = EndtoEndRAG(vd_path=vd_path, corpus=corpus)
-optimizer = optim.AdamW(model.parameters(), lr=LEARNING_RATE)
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+model = EndtoEndRAG(vd_path=vd_path, corpus=corpus, device=device)
+optimizer = optim.AdamW(model.parameters(), lr=LEARNING_RATE)
 model.to(device)
 
 
