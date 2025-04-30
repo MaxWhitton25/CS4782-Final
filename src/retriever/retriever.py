@@ -21,61 +21,59 @@ class Retriever(nn.Module):
 
     def __init__(self, vd_path: str, corpus: Dataset, device: str = "cpu"):
         super().__init__()
+        # device for query encoder and returned tensors
         self.device = torch.device(device)
 
         # ── Load vector database ─────────────────────────────────────
-        if vd_path.endswith((".faiss", ".index")):
+        if vd_path.endswith(('.faiss', '.index')):
             print("Loading FAISS index …")
             self.index = faiss.read_index(vd_path)
-            print("  loaded index with", self.index.ntotal, "vectors.")
-        elif vd_path.endswith(".pt"):
-            data = torch.load(vd_path, map_location="cpu")
-            self.embeddings = data["embeddings"]          # torch tensor
+            print(f"  loaded index with {self.index.ntotal} vectors.")
+        elif vd_path.endswith('.pt'):
+            data = torch.load(vd_path, map_location='cpu')
+            self.embeddings = data['embeddings']          # torch tensor
             print("Converting .pt embeddings to FAISS …")
-            emb_np = self.embeddings.numpy().astype("float32")
-            idx    = faiss.IndexFlatL2(emb_np.shape[1])
+            emb_np = self.embeddings.numpy().astype('float32')
+            idx = faiss.IndexFlatL2(emb_np.shape[1])
             idx.add(emb_np)
             self.index = idx
         else:
             raise ValueError(f"Unsupported file type: {vd_path}")
 
-        # corpus is a HuggingFace Dataset with a "text" column
+        # corpus is a HuggingFace Dataset with a 'text' column
         self.corpus = corpus
+        # initialize query encoder on same device
         self.q = BertQueryEncoder(device=self.device)
 
-    # ────────────────────────────────────────────────────────────────
-    #  forward: queries → (docs, sims)
-    # ────────────────────────────────────────────────────────────────
     def forward(self, queries, k: int = 1):
         """
         queries : list[str]            batch of natural-language queries
         k       : int                  top-k passages to return
         Returns:
             docs : list[list[dict]]    retrieved corpus records
-            sims : torch.Tensor        similarity scores (batch, k)
+            probs : torch.Tensor       similarity probabilities (batch, k)
         """
-        # 1. encode queries (batch, dim)  on self.device
-        q_emb = self.q(queries)                       # torch tensor
-        q_emb = F.normalize(q_emb, p=2, dim=-1)       # cosine simil.
+        # 1. encode queries (batch, dim) on self.device
+        q_emb = self.q(queries)
+        q_emb = F.normalize(q_emb, p=2, dim=-1)
 
         # 2. FAISS needs NumPy float32 on CPU
-        q_np = q_emb.detach().cpu().numpy().astype("float32")
-        D, I = self.index.search(q_np, k)             # (batch, k)
+        q_np = q_emb.detach().cpu().numpy().astype('float32')
+        D, I = self.index.search(q_np, k)
 
-        # 3. similarities back to torch
-        sims = torch.from_numpy(D).to(q_emb.device)
+        # 3. convert similarities back to torch tensor on device
+        sims = torch.from_numpy(D).to(self.device)
 
-        # 4. map indices → corpus docs
+        # 4. map indices -> corpus docs
         docs = [[self.corpus[int(idx)] for idx in row] for row in I]
 
-        # optional: if we built the index on-the-fly from .pt embeddings,
-        # recompute D via cosine sim for consistency
-        if hasattr(self, "embeddings"):
+        # 5. optional: if index built from .pt, recompute sims via cosine
+        if hasattr(self, 'embeddings'):
             I_pt = torch.from_numpy(I).to(torch.long)
             emb_vectors = self.embeddings[I_pt]       # (batch,k,dim)
-            q_expanded  = q_emb.unsqueeze(1)
-            sims = F.cosine_similarity(q_expanded, emb_vectors, dim=-1)
+            q_exp = q_emb.unsqueeze(1)
+            sims = F.cosine_similarity(q_exp, emb_vectors, dim=-1)
 
-        # convert to probabilities
+        # 6. probabilities
         probs = F.softmax(sims, dim=-1)
         return docs, probs

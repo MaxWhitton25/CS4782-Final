@@ -2,6 +2,7 @@ from transformers.models.bart import BartForConditionalGeneration, BartTokenizer
 import torch
 import torch.nn as nn
 from typing import Optional, List
+from torch.nn import CrossEntropyLoss
 
 
 class RAGGenerator(nn.Module):
@@ -94,14 +95,21 @@ class RAGGenerator(nn.Module):
                 truncation=True,
                 max_length=max_length,
             ).to(self.device)
+            repeats = torch.tensor([len(docs) for docs in doc_list], device=self.device)
+            repeated_label_input_ids = torch.repeat_interleave(label_inputs["input_ids"], repeats, dim=0).to(self.device)
 
             # Forward pass with labels for training
             outputs = self.model(
                 input_ids=inputs["input_ids"],
                 attention_mask=inputs["attention_mask"],
-                labels=label_inputs["input_ids"],
+                labels=repeated_label_input_ids,
             )
-            return outputs
+            generator_loss_fn = CrossEntropyLoss(reduction='none')
+            B, T, V = outputs.logits.shape
+            generator_losses = generator_loss_fn(outputs.logits.view(B * T, V), repeated_label_input_ids.view(B * T)).view(B, T)
+            generator_query_document_losses = torch.mean(generator_losses, -1, keepdim=False)
+
+            return outputs, generator_query_document_losses.to(self.device)
         else:
             # Forward pass without labels for inference
             outputs = self.model(
