@@ -24,7 +24,7 @@ from model import EndtoEndRAG
 
 
 
-K_VALUE = 5
+K_VALUE = 10
 BATCH_SIZE = 4
 
 
