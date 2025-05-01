@@ -1,4 +1,6 @@
-import os, sys
+#!/usr/bin/env python3
+import os
+import sys
 import torch
 import torch.nn.functional as F
 import torch.nn as nn
@@ -6,74 +8,83 @@ import faiss
 import numpy as np
 from datasets import Dataset
 
-# allow "from QueryEncoder import BertQueryEncoder"
+# allow import of QueryEncoder
 sys.path.append(os.path.join(os.path.dirname(__file__), "../../src/retriever"))
 from QueryEncoder import BertQueryEncoder
 
 
 class Retriever(nn.Module):
     """
-    Simple dense retriever:
-      • encodes a batch of queries with BertQueryEncoder
-      • searches a FAISS index (pre-built or converted from .pt)
-      • returns (docs, similarity_scores)
+    Dense retriever using FAISS, with GPU compatibility.
+
+    Args:
+        vd_path (str): path to vector database (.faiss or .pt embedding file)
+        corpus (Dataset): HF Dataset of passages, with 'text' field
+        device (str or torch.device): device for query encoder and embeddings
     """
 
     def __init__(self, vd_path: str, corpus: Dataset, device: str = "cpu"):
         super().__init__()
-        # device for query encoder and returned tensors
         self.device = torch.device(device)
 
-        # ── Load vector database ─────────────────────────────────────
+        # Load FAISS index or embeddings
         if vd_path.endswith(('.faiss', '.index')):
-            print("Loading FAISS index …")
+            # prebuilt FAISS index on CPU
+            print(f"Loading FAISS index from {vd_path}")
             self.index = faiss.read_index(vd_path)
-            print(f"  loaded index with {self.index.ntotal} vectors.")
+            print(f"Loaded index: ntotal={self.index.ntotal}, dim={self.index.d}")
+            self.embeddings = None
         elif vd_path.endswith('.pt'):
+            # load precomputed embeddings and build index
+            print(f"Loading embeddings from {vd_path}")
             data = torch.load(vd_path, map_location='cpu')
-            self.embeddings = data['embeddings']          # torch tensor
-            print("Converting .pt embeddings to FAISS …")
-            emb_np = self.embeddings.numpy().astype('float32')
-            idx = faiss.IndexFlatL2(emb_np.shape[1])
-            idx.add(emb_np)
-            self.index = idx
+            emb = data['embeddings']  # CPU tensor
+            # move tensor to device for cosine updates
+            self.embeddings = emb.to(self.device)
+            print(f"Converting embeddings to FAISS (dim={emb.shape[1]})")
+            emb_np = emb.numpy().astype('float32')
+            self.index = faiss.IndexFlatL2(emb_np.shape[1])
+            self.index.add(emb_np)
         else:
-            raise ValueError(f"Unsupported file type: {vd_path}")
+            raise ValueError(f"Unsupported vector db type: {vd_path}")
 
-        # corpus is a HuggingFace Dataset with a 'text' column
         self.corpus = corpus
-        # initialize query encoder on same device
+        # initialize query encoder on device
         self.q = BertQueryEncoder(device=self.device)
 
     def forward(self, queries, k: int = 1):
         """
-        queries : list[str]            batch of natural-language queries
-        k       : int                  top-k passages to return
+        Retrieve top-k passages for a batch of input queries.
+
+        Args:
+            queries (List[str]): batch of query strings
+            k (int): number of top passages to return
+
         Returns:
-            docs : list[list[dict]]    retrieved corpus records
-            probs : torch.Tensor       similarity probabilities (batch, k)
+            docs: List[List[record]]  // top-k passages per query
+            probs: torch.Tensor       // (batch, k) retrieval probabilities
         """
-        # 1. encode queries (batch, dim) on self.device
-        q_emb = self.q(queries)
+        # 1) encode queries to embeddings on device
+        q_emb = self.q(queries).to(self.device)  # (batch, dim)
         q_emb = F.normalize(q_emb, p=2, dim=-1)
 
-        # 2. FAISS needs NumPy float32 on CPU
+        # 2) convert to CPU numpy for FAISS
         q_np = q_emb.detach().cpu().numpy().astype('float32')
-        D, I = self.index.search(q_np, k)
+        D, I = self.index.search(q_np, k)  # D: (batch,k), I: indices
 
-        # 3. convert similarities back to torch tensor on device
+        # 3) convert sims back to torch on device
         sims = torch.from_numpy(D).to(self.device)
 
-        # 4. map indices -> corpus docs
-        docs = [[self.corpus[int(idx)] for idx in row] for row in I]
+        # 4) optionally recompute cosine similarities if embeddings loaded
+        if self.embeddings is not None:
+            I_pt = torch.from_numpy(I).long().to(self.device)
+            emb_vectors = self.embeddings[I_pt]  # (batch,k,dim) on device
+            q_expanded = q_emb.unsqueeze(1)      # (batch,1,dim)
+            sims = F.cosine_similarity(q_expanded, emb_vectors, dim=-1)
 
-        # 5. optional: if index built from .pt, recompute sims via cosine
-        if hasattr(self, 'embeddings'):
-            I_pt = torch.from_numpy(I).to(torch.long)
-            emb_vectors = self.embeddings[I_pt]       # (batch,k,dim)
-            q_exp = q_emb.unsqueeze(1)
-            sims = F.cosine_similarity(q_exp, emb_vectors, dim=-1)
-
-        # 6. probabilities
+        # 5) convert to probabilities
         probs = F.softmax(sims, dim=-1)
+
+        # 6) gather docs
+        docs = [[self.corpus[int(idx)] for idx in row] for row in I]
         return docs, probs

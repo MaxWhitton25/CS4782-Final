@@ -13,6 +13,7 @@ def _setup_metrics():
     global _rouge
     if _rouge is None:
         nltk.download('punkt', quiet=True)
+        nltk.download('punkt_tab', quiet=True)
         _rouge = evaluate.load('rouge')
 
 def evaluate_generation(reference, prediction):
