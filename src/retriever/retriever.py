@@ -34,7 +34,7 @@ class Retriever(nn.Module):
             self.embeddings = data['embeddings']          # torch tensor
             print("Converting .pt embeddings to FAISS …")
             emb_np = self.embeddings.numpy().astype('float32')
-            idx = faiss.IndexFlatL2(emb_np.shape[1])
+            idx = faiss.IndexFlatIP(emb_np.shape[1])
             idx.add(emb_np)
             self.index = idx
         else:
@@ -72,7 +72,7 @@ class Retriever(nn.Module):
             I_pt = torch.from_numpy(I).to(torch.long)
             emb_vectors = self.embeddings[I_pt]       # (batch,k,dim)
             q_exp = q_emb.unsqueeze(1)
-            sims = F.cosine_similarity(q_exp, emb_vectors, dim=-1)
+            sims =  torch.sum(q_exp * emb_vectors, axis = -1)
 
         # 6. probabilities
         probs = F.softmax(sims, dim=-1)
