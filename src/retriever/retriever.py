@@ -76,4 +76,4 @@ class Retriever(nn.Module):
 
         # 6. probabilities
         probs = F.softmax(sims, dim=-1)
-        return docs, probs
+        return docs, probs.to(self.device)
