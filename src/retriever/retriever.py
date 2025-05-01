@@ -43,7 +43,7 @@ class Retriever(nn.Module):
             self.embeddings = emb.to(self.device)
             print(f"Converting embeddings to FAISS (dim={emb.shape[1]})")
             emb_np = emb.numpy().astype('float32')
-            self.index = faiss.IndexFlatL2(emb_np.shape[1])
+            self.index = faiss.IndexFlatIP(emb_np.shape[1])
             self.index.add(emb_np)
         else:
             raise ValueError(f"Unsupported vector db type: {vd_path}")
@@ -75,16 +75,14 @@ class Retriever(nn.Module):
         # 3) convert sims back to torch on device
         sims = torch.from_numpy(D).to(self.device)
 
-        # 4) optionally recompute cosine similarities if embeddings loaded
-        if self.embeddings is not None:
-            I_pt = torch.from_numpy(I).long().to(self.device)
-            emb_vectors = self.embeddings[I_pt]  # (batch,k,dim) on device
-            q_expanded = q_emb.unsqueeze(1)      # (batch,1,dim)
-            sims = F.cosine_similarity(q_expanded, emb_vectors, dim=-1)
-
-        # 5) convert to probabilities
-        probs = F.softmax(sims, dim=-1)
-
-        # 6) gather docs
         docs = [[self.corpus[int(idx)] for idx in row] for row in I]
-        return docs, probs
+
+        if hasattr(self, 'embeddings'):
+            I_pt = torch.from_numpy(I).to(torch.long)
+            emb_vectors = self.embeddings[I_pt]       # (batch,k,dim)
+            q_exp = q_emb.unsqueeze(1)
+            sims =  torch.sum(q_exp * emb_vectors, axis = -1)
+
+        # 6. probabilities
+        probs = F.softmax(sims, dim=-1)
+        return docs, probs.to(self.device)
