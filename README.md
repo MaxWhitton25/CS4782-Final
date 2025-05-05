@@ -17,3 +17,22 @@ https://docs.google.com/presentation/d/1wd85bXCS2Mfwta8Zv5VZnI4NhCTclUztXSr7sboG
   - Retrieval Quality (internal analysis)	Top-K Recall
   - QA BLEU-1 and ROUGE-L
 - training script
+
+
+# Introduction
+
+# Chosen Result
+
+# Github Contents
+
+# Re-implementation Details
+
+# Reproduction Steps
+
+# Results / Insights
+
+# Conclusion
+
+# References
+
+# Acknowledgements

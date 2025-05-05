@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 """
-src/Training/train_fever_rag_batched.py
+code/Training/train_fever_rag_batched.py
 
 Batched RAG-style training on FEVER v1.0 (train split), using a fixed FAISS
 index of 10k pages. Saves its final model to:
 
-    src/Training/batched_checkpoints/fever_rag_batched.pt
+    code/Training/batched_checkpoints/fever_rag_batched.pt
 """
 
 import json, sys

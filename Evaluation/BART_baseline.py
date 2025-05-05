@@ -1,8 +1,8 @@
 import sys
 import os
 
-# Add src directory to PYTHONPATH for generator import
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'src')))
+# Add code directory to PYTHONPATH for generator import
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'code')))
 
 import torch
 from datasets import load_dataset

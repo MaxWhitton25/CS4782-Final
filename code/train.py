@@ -9,7 +9,7 @@ import sys
 import os
 from tqdm import tqdm
 
-sys.path.append(os.path.join(os.path.dirname(__file__), "../src"))
+sys.path.append(os.path.join(os.path.dirname(__file__), "../code"))
 
 from model import EndtoEndRAG
 
