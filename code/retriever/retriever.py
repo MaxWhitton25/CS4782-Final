@@ -9,7 +9,7 @@ import numpy as np
 from datasets import Dataset
 
 # allow import of QueryEncoder
-sys.path.append(os.path.join(os.path.dirname(__file__), "../../src/retriever"))
+sys.path.append(os.path.join(os.path.dirname(__file__), "../../code/retriever"))
 from QueryEncoder import BertQueryEncoder
 
 

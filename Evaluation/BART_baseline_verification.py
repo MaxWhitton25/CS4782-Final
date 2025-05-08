@@ -1,7 +1,7 @@
 import sys
 import os
 
-# allow imports from src/ (one level up)
+# allow imports from code/ (one level up)
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 import torch
@@ -10,7 +10,7 @@ from torch.utils.data import DataLoader
 import pandas as pd
 from tqdm import tqdm
 
-# now import from src/verifier/verifier.py
+# now import from code/verifier/verifier.py
 from verifier.verifier import RAGVerifier
 
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
