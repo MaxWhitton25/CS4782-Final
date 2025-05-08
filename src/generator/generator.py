@@ -96,7 +96,9 @@ class RAGGenerator(nn.Module):
                 max_length=max_length,
             ).to(self.device)
             repeats = torch.tensor([len(docs) for docs in doc_list], device=self.device)
-            repeated_label_input_ids = torch.repeat_interleave(label_inputs["input_ids"], repeats, dim=0).to(self.device)
+            repeated_label_input_ids = torch.repeat_interleave(
+                label_inputs["input_ids"], repeats, dim=0
+            ).to(self.device)
 
             # Forward pass with labels for training
             outputs = self.model(
@@ -104,16 +106,25 @@ class RAGGenerator(nn.Module):
                 attention_mask=inputs["attention_mask"],
                 labels=repeated_label_input_ids,
             )
-            generator_loss_fn = CrossEntropyLoss(reduction='none')
+            generator_loss_fn = CrossEntropyLoss(reduction="none")
             B, T, V = outputs.logits.shape
-            generator_losses = generator_loss_fn(outputs.logits.view(B * T, V), repeated_label_input_ids.view(B * T)).view(B, T)
-            generator_query_document_losses = torch.mean(generator_losses, -1, keepdim=False)
+            generator_losses = generator_loss_fn(
+                outputs.logits.view(B * T, V), repeated_label_input_ids.view(B * T)
+            ).view(B, T)
+            generator_query_document_losses = torch.mean(
+                generator_losses, -1, keepdim=False
+            )
 
             return outputs, generator_query_document_losses.to(self.device)
         else:
             # Forward pass without labels for inference
-            outputs = self.model(
+            outputs = self.model.generate(
                 input_ids=inputs["input_ids"],
                 attention_mask=inputs["attention_mask"],
+                max_length=max_length,
+                num_beams=num_beams,
+                output_logits=True,
+                return_dict_in_generate=True,
+                output_scores=True,
             )
             return outputs
