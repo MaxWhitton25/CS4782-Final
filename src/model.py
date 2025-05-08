@@ -27,7 +27,7 @@ class EndtoEndRAG(nn.Module):
     def forward(
         self,
         query: List[str],
-        labels: Optional[List[str]] = None,
+        labels: List[str],
         k: int = 2,
     ):
         """
@@ -39,33 +39,17 @@ class EndtoEndRAG(nn.Module):
         """
         # Retrieve top-k documents for each query
         docs, doc_probs = self.retriever(query, k)
+        # Generate outputs
+        outputs = self.generator(
+            query=query,
+            doc_list=docs,
+            labels=labels,
+        )
+        generator_probs = F.softmax(outputs.logits, dim=-1)
 
-        if labels is not None:
-            # Generate outputs
-            outputs, generator_query_document_losses = self.generator.generate(
-                query, docs, labels
-            )
-            generator_query_document_losses = generator_query_document_losses.view_as(
-                doc_probs
-            )
+        loss = -torch.log(torch.sum(doc_probs * generator_probs, dim=-1))
 
-            # take logs and then add and then exponentiate to multiply without resulting in overflow
-            log_doc_probs_minus_generator_query_document_losses = torch.exp(
-                torch.log(doc_probs) - generator_query_document_losses
-            )
-            negative_log_likelihood_of_sum = -torch.log(
-                torch.sum(log_doc_probs_minus_generator_query_document_losses, dim=-1)
-            )
-            total_loss = torch.mean(negative_log_likelihood_of_sum)
-
-            outputs.loss = total_loss
-
-            return outputs, doc_probs
-        else:
-            # Generate outputs
-            outputs = self.generator.generate(query, docs)
-
-            return outputs, doc_probs
+        return outputs, loss
 
     def generate(
         self,
