@@ -73,7 +73,7 @@ class Retriever(nn.Module):
         D, I = self.index.search(q_np, k)  # D: (batch,k), I: indices
 
         # 3) convert sims back to torch on device
-        sims = torch.from_numpy(D).to(self.device)
+        sims = F.normalize(torch.from_numpy(D).to(self.device), p=2, dim=-1)
 
         docs = [[self.corpus[int(idx)] for idx in row] for row in I]
 
