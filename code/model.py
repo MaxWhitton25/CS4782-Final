@@ -45,9 +45,32 @@ class EndtoEndRAG(nn.Module):
             doc_list=docs,
             labels=labels,
         )
-        generator_probs = F.softmax(outputs.logits, dim=-1)
+        generator_probs = F.softmax(
+            outputs.logits, dim=-1
+        )  # (batch_size*k, seq_len, vocab_size)
 
-        loss = -torch.log(torch.sum(doc_probs * generator_probs, dim=-1))
+        # Reshape generator_probs to (batch_size, k, seq_len, vocab_size)
+        batch_size = len(query)
+        seq_len = generator_probs.size(1)
+        vocab_size = generator_probs.size(2)
+        generator_probs = generator_probs.view(batch_size, k, seq_len, vocab_size)
+
+        # Convert to log space
+        log_generator_probs = torch.log(generator_probs)
+
+        # Calculate sequence log probabilities using log-sum-exp
+        sequence_log_probs = torch.logsumexp(
+            log_generator_probs, dim=-1
+        )  # (batch_size, k, seq_len)
+
+        # Calculate document-level log probabilities
+        doc_level_log_probs = torch.sum(sequence_log_probs, dim=-1)  # (batch_size, k)
+
+        # Convert doc_probs to log space
+        log_doc_probs = torch.log(doc_probs)
+
+        # Calculate final loss using log probabilities
+        loss = -torch.logsumexp(log_doc_probs + doc_level_log_probs, dim=-1)
 
         return outputs, loss
 
