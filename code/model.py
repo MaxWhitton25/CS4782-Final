@@ -10,14 +10,14 @@ import torch
 
 
 class EndtoEndRAG(nn.Module):
-    def __init__(self, vd_path: str, corpus: Dataset, device="cpu"):
+    def __init__(self, vd_path: str, corpus: Dataset, device: Optional[str] = None):
         """
         Initializes the RAG model with a retriever and a generator.
 
         Args:
-            vd_path (str): Path to the vector database (for retriever).
-            corpus (Dataset): Dataset of passages.
-            device (str): Device to run the models on ('cpu' or 'cuda').
+            vd_path: Path to the vector database (for retriever).
+            corpus: Corpus of passages.
+            device: Device to run the models on. If None, auto-detect.
         """
         super().__init__()
         self.retriever = Retriever(vd_path=vd_path, corpus=corpus, device=device)
@@ -32,10 +32,9 @@ class EndtoEndRAG(nn.Module):
     ):
         """
         Args:
-            query (List[str]): The input queries.
-            labels (List[str], optional): The input labels.
-            k (int): Number of documents to retrieve.
-            device (str): Device to run the models on ('cpu' or 'cuda').
+            query: The input queries.
+            labels: The input labels.
+            k: Number of documents to retrieve.
         """
         # Retrieve top-k documents for each query
         docs, doc_probs = self.retriever(query, k)
@@ -45,26 +44,16 @@ class EndtoEndRAG(nn.Module):
             doc_list=docs,
             labels=labels,
         )
-        generator_probs = F.softmax(
-            outputs.logits, dim=-1
-        )  # (batch_size*k, seq_len, vocab_size)
+        generator_probs = F.softmax(outputs.logits, dim=-1)
 
-        # Reshape generator_probs to (batch_size, k, seq_len, vocab_size)
+        # Get sequence log probabilities in log space
         batch_size = len(query)
         seq_len = generator_probs.size(1)
         vocab_size = generator_probs.size(2)
         generator_probs = generator_probs.view(batch_size, k, seq_len, vocab_size)
-
-        # Convert to log space
         log_generator_probs = torch.log(generator_probs)
-
-        # Calculate sequence log probabilities using log-sum-exp
-        sequence_log_probs = torch.logsumexp(
-            log_generator_probs, dim=-1
-        )  # (batch_size, k, seq_len)
-
-        # Calculate document-level log probabilities
-        doc_level_log_probs = torch.sum(sequence_log_probs, dim=-1)  # (batch_size, k)
+        sequence_log_probs = torch.logsumexp(log_generator_probs, dim=-1)
+        doc_level_log_probs = torch.sum(sequence_log_probs, dim=-1)
 
         # Convert doc_probs to log space
         log_doc_probs = torch.log(doc_probs)
@@ -85,10 +74,10 @@ class EndtoEndRAG(nn.Module):
         Implements RAG-Sequence with fast decoding.
 
         Args:
-            query (List[str]): The input queries
-            k (int): Number of documents to retrieve
-            max_length (int): Maximum length of generated sequence
-            num_beams (int): Number of beams for beam search
+            query: The input queries
+            k: Number of documents to retrieve
+            max_length: Maximum length of generated sequence
+            num_beams: Number of beams for beam search
 
         Returns:
             List[str]: Generated sequences with highest marginalized probability
@@ -104,7 +93,6 @@ class EndtoEndRAG(nn.Module):
 
             # Generate independently for each document
             for doc_idx in range(k):
-                # Get retrieval score
                 retrieval_score = torch.log(doc_probs[batch_idx][doc_idx])
 
                 # Generate candidates using beam search for this document
@@ -116,8 +104,7 @@ class EndtoEndRAG(nn.Module):
                 )
 
                 # Get generation probabilities
-                generated_ids = outputs.sequences[0]  # shape: (seq_len)
-                # outputs.scores is a tuple of length sequence_length where each item is a tensor of size (batch_size * num_beams, vocab_size)
+                generated_ids = outputs.sequences[0]
                 generated_scores = outputs.scores
 
                 generation_score = 0
@@ -130,7 +117,7 @@ class EndtoEndRAG(nn.Module):
 
                     token_id = generated_ids[step]
                     token_prob = step_probs[0, token_id]
-                    # Compute total sequence probability in log space for numerical stability
+                    # Compute total sequence probability in log space
                     generation_score += torch.log(token_prob)
 
                 total_score = retrieval_score + generation_score

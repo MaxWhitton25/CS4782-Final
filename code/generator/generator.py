@@ -2,13 +2,12 @@ from transformers.models.bart import BartForConditionalGeneration, BartTokenizer
 import torch
 import torch.nn as nn
 from typing import Optional, List
-from torch.nn import CrossEntropyLoss
 from transformers.modeling_outputs import Seq2SeqLMOutput
 
 
 class RAGGenerator(nn.Module):
     """
-    RAG Generator module using BART BASE.
+    RAG Generator module using BART.
     """
 
     def __init__(
@@ -17,8 +16,8 @@ class RAGGenerator(nn.Module):
         """
         Initialize the BART model and tokenizer.
         Args:
-            model_name (str): HuggingFace model name.
-            device (str, optional): Device to use ('cuda' or 'cpu'). If None, auto-detect.
+            model_name: HuggingFace model name. Should be a BART model.
+            device: Device to use. If None, auto-detect.
         """
         super().__init__()
         self.model = BartForConditionalGeneration.from_pretrained(model_name)
@@ -27,33 +26,31 @@ class RAGGenerator(nn.Module):
             self.device = "cuda" if torch.cuda.is_available() else "cpu"
         else:
             self.device = device
-        self.model = self.model.to(self.device)
+        self.model = self.model.to(self.device)  # type: ignore
 
     def forward(
         self,
         query: List[str],
         doc_list: List[List[str]],
-        labels: Optional[List[str]] = None,
+        labels: List[str],
         max_length: int = 512,
-        num_beams: int = 4,
-        **kwargs,
     ):
         """
-        Forward pass through the generator.
+        Forward pass through the generator. Note that forward is only used for training.
         Args:
-            query (List[str]): The input queries.
-            doc_list (List[List[str]]): The retrieved context/documents for each query.
-            labels (List[str], optional): The input labels.
-            max_length (int): Max length of generated answer.
-            num_beams (int): Beam search width.
-            **kwargs: Additional arguments for BartForConditionalGeneration.
+            query: The input queries.
+            doc_list: The retrieved context/documents for each query.
+            labels: The input labels.
+            max_length: Max length of generated answer.
         Returns:
-            ModelOutput: HuggingFace model output (includes loss if labels are provided).
+            Seq2SeqLMOutput: HuggingFace model output (includes loss).
         """
+        # Concatenate question and context as input
         input_texts = []
         for q, docs in zip(query, doc_list):
             for doc in docs:
                 input_texts.append(f"Document: {doc} \n\nQuery: {q}")
+
         # Tokenize inputs
         inputs = self.tokenizer(
             input_texts,
@@ -86,12 +83,6 @@ class RAGGenerator(nn.Module):
 
         return outputs
 
-    def get_tokenizer(self):
-        """
-        Utility to get the matching tokenizer.
-        """
-        return self.tokenizer
-
     def generate(
         self,
         query: List[str],
@@ -100,18 +91,21 @@ class RAGGenerator(nn.Module):
         num_beams: int = 4,
     ):
         """
-        Generate an answer given a question and context.
+        Generate a response given a question and context. Note that generate is only used for inference.
         Args:
-            query (List[str]): The input queries.
-            doc_list (List[List[str]]): The retrieved context/documents for each query.
-            max_length (int): Max length of generated answer.
-            num_beams (int): Beam search width.
+            query: The input queries.
+            doc_list: The retrieved context/documents for each query.
+            max_length: Max length of generated answer.
+            num_beams: Beam search width.
+        Returns:
+            GenerateBeamEncoderDecoderOutput: The generated responses.
         """
         # Concatenate question and context as input
         input_texts = []
         for q, docs in zip(query, doc_list):
             for doc in docs:
                 input_texts.append(f"{q} {self.tokenizer.eos_token} {doc}")
+
         # Tokenize inputs
         inputs = self.tokenizer(
             input_texts,
