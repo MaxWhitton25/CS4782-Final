@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-src/Training/train_fever_rag.py
+code/Training/train_fever_rag.py
 ────────────────────────────────
 End-to-end RAG-style training on FEVER v1.0 (train split) with
 

@@ -24,11 +24,11 @@ from model import EndtoEndRAG
 
 
 
-K_VALUE = 5
+K_VALUE = 10
 BATCH_SIZE = 4
 
 
-sys.path.append(os.path.join(os.path.dirname(__file__), "../src"))
+sys.path.append(os.path.join(os.path.dirname(__file__), "../code"))
 
 vd_path = "Embeddings/bioasq_passage_embeddings.pt"
 corpus = load_dataset("rag-datasets/rag-mini-bioasq", "text-corpus")["passages"]
