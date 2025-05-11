@@ -1,21 +1,29 @@
 #!/usr/bin/env python
 """
-src/Training/train_fever_rag_batched.py
+src/Training/train_fever_rag_batched_split.py
 
-Batched RAG-style training on FEVER v1.0 (train split), using a fixed FAISS
-index of 10k pages. Saves its final model to:
+Batched RAG-style training on FEVER v1.0 (train split with 80/20 train-test split),
+using a fixed FAISS index of 10k pages. Saves its final model to:
 
-    src/Training/batched_checkpoints/fever_rag_batched.pt
+    src/Training/batched_checkpoints/fever_rag_split.pt
 """
 
-import json, sys
+import json, sys, os
 from pathlib import Path
+import numpy as np
 
 import torch
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, Subset
 from torch.optim import AdamW
 from tqdm import tqdm
 from datasets import load_dataset, Dataset
+
+# Set a fixed random seed for reproducibility
+RANDOM_SEED = 42
+np.random.seed(RANDOM_SEED)
+torch.manual_seed(RANDOM_SEED)
+if torch.cuda.is_available():
+    torch.cuda.manual_seed_all(RANDOM_SEED)
 
 SRC_DIR = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(SRC_DIR))
@@ -32,6 +40,7 @@ BATCH_SIZE = 16        # adjust for your GPU
 EPOCHS     = 2
 TOP_K      = 1
 LR         = 5e-5
+TRAIN_RATIO = 0.8     # 80% train, 20% test split
 
 LABEL_TOK = {
     "SUPPORTS":         "<supports>",
@@ -52,18 +61,74 @@ def collate_fever(batch):
     }
 
 
+def create_train_test_split(dataset, train_ratio=0.8, seed=42):
+    """
+    Create train and test splits from a dataset.
+    
+    Args:
+        dataset: The original dataset
+        train_ratio: Ratio of data to use for training (default: 0.8)
+        seed: Random seed for reproducibility
+        
+    Returns:
+        train_dataset, test_dataset
+    """
+    dataset_size = len(dataset)
+    indices = list(range(dataset_size))
+    
+    # Shuffle indices
+    np.random.seed(seed)
+    np.random.shuffle(indices)
+    
+    # Calculate split point
+    split = int(np.floor(train_ratio * dataset_size))
+    
+    # Create train and test indices
+    train_indices = indices[:split]
+    test_indices = indices[split:]
+    
+    # Create subsets
+    train_dataset = Subset(dataset, train_indices)
+    test_dataset = Subset(dataset, test_indices)
+    
+    return train_dataset, test_dataset
+
+
 def main():
     print(f"Using device: {DEVICE}\n")
 
-    fever_ds = load_dataset("fever", "v1.0", split="train")
+    # Load the FEVER dataset (train split)
+    full_dataset = load_dataset("fever", "v1.0", split="train")
+    
+    # Create train/test split (80/20)
+    train_dataset, test_dataset = create_train_test_split(
+        full_dataset, 
+        train_ratio=TRAIN_RATIO, 
+        seed=RANDOM_SEED
+    )
+    
+    print(f"Original dataset size: {len(full_dataset):,}")
+    print(f"Train split size: {len(train_dataset):,}")
+    print(f"Test split size: {len(test_dataset):,}")
+    
+    # Save the test indices for reproducibility
+    ckpt_dir = SRC_DIR / "Training" / "batched_checkpoints"
+    ckpt_dir.mkdir(parents=True, exist_ok=True)
+    
+    # Extract and save test indices
+    test_indices = test_dataset.indices
+    with open(ckpt_dir / "fever_rag_split_test_indices.json", "w") as f:
+        json.dump(test_indices, f)
+    
+    # Create dataloader for the training subset
     loader = DataLoader(
-        fever_ds,
+        train_dataset,
         batch_size=BATCH_SIZE,
         shuffle=True,
         collate_fn=collate_fever,
         drop_last=True,
     )
-    print(f"Loaded {len(fever_ds):,} FEVER examples, batching {BATCH_SIZE}.\n")
+    print(f"Created dataloader with batch size {BATCH_SIZE}.\n")
 
     # ────────────────────────────────────────────────────────────────────
     # 2) Build 10k-passage DPR corpus subset
@@ -159,16 +224,17 @@ def main():
     # ────────────────────────────────────────────────────────────────────
     # 5) Save checkpoint to new dir & filename
     # ────────────────────────────────────────────────────────────────────
-    ckpt_dir = SRC_DIR / "Training" / "batched_checkpoints"
-    ckpt_dir.mkdir(parents=True, exist_ok=True)
-    ckpt_file = ckpt_dir / "fever_rag_batched.pt"
+    ckpt_file = ckpt_dir / "fever_rag_split.pt"
 
     torch.save({
         "verifier_state": verifier.state_dict(),
         "query_encoder_state": retriever.q.state_dict(),
+        "random_seed": RANDOM_SEED,
+        "train_test_ratio": TRAIN_RATIO
     }, ckpt_file)
 
     print(f"\nCheckpoint saved to {ckpt_file}")
+    print(f"Test indices saved to {ckpt_dir / 'fever_rag_split_test_indices.json'}")
 
 if __name__ == "__main__":
     main()
