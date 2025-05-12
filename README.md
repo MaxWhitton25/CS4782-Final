@@ -40,7 +40,72 @@ We chose to fine-tune the RAG-Sequence model using Fast Decoding on the rag-mini
 
 ## Reproduction Steps
 
-*(Please add detailed instructions for reproducing your results, e.g., environment setup, required packages, and specific training commands.)*
+### Environment Setup
+1. Create a new conda environment:
+```bash
+conda create -n rag python=3.8
+conda activate rag
+```
+
+2. Install required packages:
+```bash
+pip install torch transformers datasets faiss-cpu tqdm numpy
+```
+
+### OpenQA (rag-mini-bioasq) Training
+1. Download the dataset:
+```bash
+python -c "from datasets import load_dataset; load_dataset('rag-datasets/rag-mini-bioasq')"
+```
+
+2. Train the model:
+```bash
+python src/Training/train.py \
+    --dataset rag-mini-bioasq \
+    --model_name facebook/bart-base \
+    --batch_size 8 \
+    --epochs 5 \
+    --learning_rate 5e-5 \
+    --top_k 3 \
+    --output_dir checkpoints/openqa
+```
+
+3. Evaluate the model:
+```bash
+python src/Training/evaluate.py \
+    --checkpoint checkpoints/openqa/model.pt \
+    --dataset rag-mini-bioasq \
+    --split test \
+    --top_k 3
+```
+
+### FEVER Training
+1. Download the FEVER dataset and create embeddings:
+```bash
+# Download FEVER dataset
+python -c "from datasets import load_dataset; load_dataset('fever', 'v1.0')"
+
+# Create FAISS index for FEVER pages
+python src/Training/create_fever_index.py
+```
+
+2. Train the model:
+```bash
+python src/Training/train_fever_rag.py \
+    --batch_size 8 \
+    --epochs 2 \
+    --learning_rate 5e-5 \
+    --top_k 1
+```
+
+3. Evaluate the model:
+```bash
+python src/Training/evaluate_fever.py \
+    --checkpoint checkpoints/fever_rag.pt \
+    --split test
+```
+
+Note: Training times may vary depending on your hardware. A GPU with at least 16-32GB VRAM is recommended.
 
 ## Results / Insights
 
