@@ -17,7 +17,10 @@ Large Language Models (LLMs) have proven to be effective tools across a wide ran
 # Chosen Result
 
 # Github Contents
-
+* Code: includes our implementation, training loops, and evaluation pipelines for this project.
+  * Code/generator: this folder includes our implementation of the generator module of RAG. It leverages BartForConditionalGeneration.
+  * Code/retriever: this folder includes out implementation of the retriever module of RAG, including an encoder module (which uses BERT) and a retriever module that leverages the encoder and faiss to retrieve the correct documents.
+* 
 # Re-implementation Details
 
 # Reproduction Steps
