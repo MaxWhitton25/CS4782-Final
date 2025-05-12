@@ -9,13 +9,14 @@ import sys
 import os
 from tqdm import tqdm
 
-sys.path.append(os.path.join(os.path.dirname(__file__), "../src"))
+sys.path.append(os.path.join(os.path.dirname(__file__), "../code"))
 
 from model import EndtoEndRAG
 
 EPOCHS = 5
 BATCH_SIZE = 8
 LEARNING_RATE = 1e-5
+K_VALUE = 5
 
 print("Loading dataset...")
 qa_pairs = load_dataset("rag-datasets/rag-mini-bioasq", "question-answer-passages")
@@ -48,9 +49,9 @@ test_dataloader = DataLoader(
     test_dataset, batch_size=BATCH_SIZE, shuffle=False, collate_fn=my_collate_fn
 )
 
-model = EndtoEndRAG(vd_path=vd_path, corpus=corpus)
-optimizer = optim.AdamW(model.parameters(), lr=LEARNING_RATE)
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+model = EndtoEndRAG(vd_path=vd_path, corpus=corpus, device=device)
+optimizer = optim.AdamW(model.parameters(), lr=LEARNING_RATE)
 model.to(device)
 
 
@@ -89,7 +90,7 @@ def evaluate(model, dataloader, device):
                 for k, v in batch.items()
             }
 
-            outputs, scores = model(batch["question"], batch["answer"])
+            outputs, scores = model(batch["question"], batch["answer"], K_VALUE)
             loss = outputs.loss
             total_loss += loss.item()
 

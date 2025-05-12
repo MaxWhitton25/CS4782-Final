@@ -1,2 +1,4 @@
 __pycache__/
 Embeddings/passage_embedding/
+.idea
+.DS_Store
