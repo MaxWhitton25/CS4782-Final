@@ -76,6 +76,3 @@ Future exploration may include testing with larger models/datasets, semantic eva
 - [rag-mini-bioasq dataset](https://huggingface.co/datasets/rag-datasets/rag-mini-bioasq)
 - [FEVER dataset](https://fever.ai/)
 
-## Acknowledgements
-
-*(Please add any relevant acknowledgments, e.g., contributors, resources, or funding sources.)*
