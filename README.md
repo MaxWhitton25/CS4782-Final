@@ -74,5 +74,5 @@ Future exploration may include testing with larger models/datasets, semantic eva
 ## References
 - Lewis et al., 2021. "[Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks](https://arxiv.org/pdf/2005.11401)," NeurIPS 2020.
 - [rag-mini-bioasq dataset](https://huggingface.co/datasets/rag-datasets/rag-mini-bioasq)
-- [FEVER dataset](https://fever.ai/)
+- [FEVER dataset](https://huggingface.co/datasets/fever/fever/tree/main)
 
