@@ -1,14 +1,5 @@
 # Retrieval-Augmented Generation (RAG-Sequence Mode)
 
-[arXiv Paper](https://arxiv.org/pdf/2005.11401)
-
-### Dataset
-- [rag-mini-bioasq](https://huggingface.co/datasets/rag-datasets/rag-mini-bioasq)
-- [FEVER](https://fever.ai/)
-
-### Poster
-[Poster PDF](poster/poster.pdf)
-
 ## Introduction
 
 This GitHub repository is our reimplementation of the original Retrieval-Augmented Generation (RAG) paper: *Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks* (Lewis et al., 2021).
@@ -135,6 +126,20 @@ Consistent with the original paper, our reimplementation confirmed that RAG subs
 Additionally, we found modularity crucial for debugging and effective collaboration. Insights were gained regarding optimization and loss computation for RAG's multi-document processing.
 
 Future exploration may include testing with larger models/datasets, semantic evaluations, cost-effective fine-tuning of document encoders, and potential multimodal extensions.
+
+## Links
+### Paper 
+[arXiv Paper](https://arxiv.org/pdf/2005.11401)
+
+### Dataset
+- [rag-mini-bioasq](https://huggingface.co/datasets/rag-datasets/rag-mini-bioasq)
+- [FEVER](https://fever.ai/)
+
+### Poster
+[Poster PDF](poster/poster.pdf)
+
+### Report
+[Report PDF](report/DL___Final_Report.pdf)
 
 ## References
 - Lewis et al., 2021. "[Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks](https://arxiv.org/pdf/2005.11401)," NeurIPS 2020.
