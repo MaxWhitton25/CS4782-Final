@@ -28,6 +28,10 @@ Large Language Models (LLMs) have proven to be effective tools across a wide ran
 # Results / Insights
 
 # Conclusion
+As in the original paper, we found that RAG greatly improves model performance in a question-answer context and fact verification context. Beyond the scope of the original paper, we that this improvement still held even when using a niche dataset characterized by highly specialized terminology, concepts, and questions.
+
+
+In reimplementation, we found that modularity of architecture was vital to ensure ease of debugging and comprehensibility, especially when working together as a team on a complex multi-step machine learning pipeline. Furthermore, we learned to infer and synthesize things not explicitly mentioned in the paper, such as selecting a sufficient learning rate which ensured stability of training.
 
 # References
 
