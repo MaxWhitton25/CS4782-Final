@@ -1,42 +1,81 @@
-# Retrieval-Augmented Generation (in RAG-Sequence mode)
+# Retrieval-Augmented Generation (RAG-Sequence Mode)
 
-[arXiv](https://arxiv.org/pdf/2005.11401)
+[arXiv Paper](https://arxiv.org/pdf/2005.11401)
 
 ### Dataset
-[rag-mini-bioasq](https://huggingface.co/datasets/rag-datasets/rag-mini-bioasq)
+- [rag-mini-bioasq](https://huggingface.co/datasets/rag-datasets/rag-mini-bioasq)
+- [FEVER](https://fever.ai/)
 
 ### Poster
-[poster.pdf](poster/poster.pdf)
+[Poster PDF](poster/poster.pdf)
 
-# Introduction
-This github repo is our reimplementation of a paper of our choice, the original RAG paper: Retrieval-Augmented Generation for
-Knowledge-Intensive NLP Tasks.
+## Introduction
 
-Large Language Models (LLMs) have proven to be effective tools across a wide range of natural language processing tasks. However, their ability to recall factual information is often limited by the fixed context window and static knowledge encoded in model parameters during pre-training. This can lead to gaps in model knowledge, especially on queries outside the scope of the training data. The paper reproduce via this repo introduced Retrieval-Augmented Generation (RAG), a technique that addresses this limitation by combining parametric knowledge from LLMs with non-parametric memory through document retrieval.
+This GitHub repository is our reimplementation of the original Retrieval-Augmented Generation (RAG) paper: *Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks* (Lewis et al., 2021).
 
-# Chosen Result
+Large Language Models (LLMs) are highly effective across many natural language processing tasks but often struggle with factual recall due to limitations in fixed context windows and static parameter knowledge. RAG addresses these limitations by integrating parametric knowledge (from LLMs) with non-parametric memory through document retrieval.
 
-# Github Contents
-* Code: includes our implementation, training loops, and evaluation pipelines for this project.
-  * Code/generator: this folder includes our implementation of the generator module of RAG. It leverages BartForConditionalGeneration.
-  * Code/retriever: this folder includes out implementation of the retriever module of RAG, including an encoder module (which uses BERT) and a retriever module that leverages the encoder and faiss to retrieve the correct documents.
-* 
-# Re-implementation Details
+## Chosen Result
 
-# Reproduction Steps
+We chose to fine-tune the RAG-Sequence model using Fast Decoding on the rag-mini-bioasq and FEVER datasets. The primary goal was to reproduce the significant performance improvements of RAG over baseline models (such as BART) demonstrated in the original paper. Specifically, we aimed to show enhanced BLEU/ROUGE scores in abstractive Question Answering (QA) and increased accuracy in Fact Verification tasks.
 
-# Results / Insights
+## GitHub Contents
+- **Code**: Implementation, training loops, and evaluation pipelines.
+  - **Code/generator**: Contains the generator module leveraging `BartForConditionalGeneration`.
+  - **Code/retriever**: Includes the retriever module, comprising a BERT-based encoder and retrieval logic using FAISS.
 
-# Conclusion
-As in the original paper, we found that RAG greatly improves model performance (as compared to raw BART generation) in a question-answer context and fact verification context. A more specific finding we had, beyond the scope of the original paper, was that it massively improves performance when operating on a niche dataset characterized by highly specialized terminology, concepts, and questions.
+## Re-implementation Details
+- **Retriever**:
+  - Utilized Dense Passage Retrieval (DPR) with BERT-based encoders.
+  - Stored document embeddings in a FAISS vector database, enabling efficient retrieval via Maximum Inner Product Search (MIPS).
 
+- **Generator**:
+  - Used BART-base (approx. 140M parameters).
+  - Implemented Fast Decoding to efficiently select the final generated output from multiple candidate sequences.
 
-In reimplementation, we found that modularity of architecture was vital to ensure ease of debugging and comprehensibility, especially when working together as a team on a complex multi-step machine learning pipeline. Furthermore, we learned to infer and synthesize things not explicitly mentioned in the paper, such as selecting a sufficient learning rate which ensured stability of training.
+- **Training**:
+  - Fine-tuned BERT query encoder and BART generator on the rag-mini-bioasq dataset.
+  - Conducted fine-tuning for 5 epochs with varying retrieval top-k values (3, 5, 10).
+  - Evaluated models using BLEU-1 and ROUGE-L for QA tasks, and accuracy, precision, recall, and F1 scores for Fact Verification.
 
-# References
-> Piktus et al., "Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks", NeurIPS 2020.
-> [Paper] https://dl.acm.org/doi/abs/10.5555/3495724.3496517
+## Reproduction Steps
 
-> [Dataset] https://huggingface.co/datasets/rag-datasets/rag-mini-bioasq
+*(Please add detailed instructions for reproducing your results, e.g., environment setup, required packages, and specific training commands.)*
 
-# Acknowledgements
+## Results / Insights
+
+### Abstractive Question Answering (rag-mini-bioasq)
+| Method | k | Avg BLEU-1 | Avg ROUGE-L |
+|--------|---|------------|-------------|
+| Baseline (BART) | - | 0.1086 | 0.2225 |
+| RAG-Sequence | 1 | **0.4355** | 0.3860 |
+| RAG-Sequence | 3 | 0.4260 | 0.3863 |
+| RAG-Sequence | 5 | 0.4340 | **0.3865** |
+| RAG-Sequence | 10 | 0.4355 | 0.3860 |
+
+We observed nearly a 4x increase in BLEU-1 and a 1.5x increase in ROUGE-L compared to the baseline.
+
+### Fact Verification (FEVER)
+| Approach | Accuracy | Macro-Precision | Macro-Recall | Macro-F1 |
+|----------|----------|-----------------|--------------|----------|
+| Baseline | 0.2380   | 0.0793          | 0.3333       | 0.1282   |
+| RAG      | **0.6562** | **0.6626**       | **0.6354**    | **0.6372** |
+
+RAG significantly improved the accuracy and F1-score on the FEVER dataset, demonstrating its effectiveness in fact verification tasks.
+
+## Conclusion
+
+Consistent with the original paper, our reimplementation confirmed that RAG substantially improves performance on knowledge-intensive tasks like abstractive QA and fact verification. We notably observed that RAG performs exceptionally well on niche datasets involving specialized terminology.
+
+Additionally, we found modularity crucial for debugging and effective collaboration. Insights were gained regarding optimization and loss computation for RAG's multi-document processing.
+
+Future exploration may include testing with larger models/datasets, semantic evaluations, cost-effective fine-tuning of document encoders, and potential multimodal extensions.
+
+## References
+- Lewis et al., 2021. "[Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks](https://arxiv.org/pdf/2005.11401)," NeurIPS 2020.
+- [rag-mini-bioasq dataset](https://huggingface.co/datasets/rag-datasets/rag-mini-bioasq)
+- [FEVER dataset](https://fever.ai/)
+
+## Acknowledgements
+
+*(Please add any relevant acknowledgments, e.g., contributors, resources, or funding sources.)*
