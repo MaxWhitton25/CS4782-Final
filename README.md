@@ -34,5 +34,9 @@ As in the original paper, we found that RAG greatly improves model performance i
 In reimplementation, we found that modularity of architecture was vital to ensure ease of debugging and comprehensibility, especially when working together as a team on a complex multi-step machine learning pipeline. Furthermore, we learned to infer and synthesize things not explicitly mentioned in the paper, such as selecting a sufficient learning rate which ensured stability of training.
 
 # References
+> Piktus et al., "Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks", NeurIPS 2020.
+> [Paper] https://dl.acm.org/doi/abs/10.5555/3495724.3496517
+
+> [Dataset] https://huggingface.co/datasets/rag-datasets/rag-mini-bioasq
 
 # Acknowledgements
