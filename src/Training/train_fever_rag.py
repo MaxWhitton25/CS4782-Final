@@ -111,11 +111,33 @@ def main():
                         for doc_list in docs]
 
             # ----------------  VERIFY   ------------------
-            losses = []
-            for claim, ctx, label in zip(claims, contexts, gold_labels):
-                loss = verifier.train_run(claim, ctx, label, DEVICE)
-                losses.append(loss)
-            loss = torch.stack(losses).mean()
+            # Process entire batch at once
+            input_texts = [f"{claim} {verifier.tokenizer.eos_token} {ctx}" 
+                         for claim, ctx in zip(claims, contexts)]
+            inputs = verifier.tokenizer(
+                input_texts,
+                return_tensors="pt",
+                truncation=True,
+                padding=True,
+                max_length=512,
+            )
+            labels = verifier.tokenizer(
+                gold_labels,
+                return_tensors="pt",
+                truncation=True,
+                padding=True,
+            )
+
+            input_ids = inputs["input_ids"].to(DEVICE)
+            attention_mask = inputs["attention_mask"].to(DEVICE)
+            label_ids = labels["input_ids"].to(DEVICE)
+
+            outputs = verifier.model(
+                input_ids=input_ids,
+                attention_mask=attention_mask,
+                labels=label_ids,
+            )
+            loss = outputs.loss
 
             optim.zero_grad()
             loss.backward()
