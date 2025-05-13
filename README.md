@@ -1,5 +1,7 @@
 # Retrieval-Augmented Generation (RAG-Sequence Mode)
 
+[RAG Diagram](poster/RAG_diagram.png)
+
 ## Introduction
 
 This GitHub repository is our reimplementation of the original Retrieval-Augmented Generation (RAG) paper: *Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks* (Lewis et al., 2021).
