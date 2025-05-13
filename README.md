@@ -1,6 +1,6 @@
 # Retrieval-Augmented Generation (RAG-Sequence Mode)
 
-[RAG Diagram](poster/RAG_diagram.png)
+![RAG Diagram](poster/RAG_diagram.png)
 
 ## Introduction
 
