@@ -141,7 +141,7 @@ Future exploration may include testing with larger models/datasets, semantic eva
 [Poster PDF](poster/poster.pdf)
 
 ### Report
-[Report PDF](report/DL___Final_Report.pdf)
+[Report PDF](report/group_X_RAG_2page_report.pdf)
 
 ## Disclaimer
 
