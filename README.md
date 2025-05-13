@@ -145,7 +145,7 @@ Future exploration may include testing with larger models/datasets, semantic eva
 
 ## Disclaimer
 
-Large Language Models have beem employed in the work on this project for general refactoring and debugging of code components, as well as editorial/grammar-related work for the written parts.
+Large Language Models have been employed in the work on this project for general refactoring and debugging of code components, as well as editorial/grammar-related work for the written parts.
 
 ## References
 - Lewis et al., 2021. "[Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks](https://arxiv.org/pdf/2005.11401)," NeurIPS 2020.
