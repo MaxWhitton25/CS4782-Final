@@ -17,7 +17,7 @@ DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 BATCH_SIZE = 32
 SUBSET_SIZE = 1000   # small eval set
 
-# map FEVER labels to your special tokens
+# map FEVER labels to special tokens
 LABEL_MAP = {
     0: "<supports>",
     1: "<refutes>",
