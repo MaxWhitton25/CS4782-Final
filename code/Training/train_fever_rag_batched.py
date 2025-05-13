@@ -129,9 +129,7 @@ def main():
     )
     print(f"Created dataloader with batch size {BATCH_SIZE}.\n")
 
-    # ────────────────────────────────────────────────────────────────────
-    # 2) Build 10k-passage DPR corpus subset
-    # ────────────────────────────────────────────────────────────────────
+    # 2) Build 10k-passage DPR corpus subse
     with open(IDS_JSON) as f:
         keep_ids = set(json.load(f))
 
@@ -146,9 +144,7 @@ def main():
     corpus_ds = Dataset.from_dict({"text": texts})
     print(f"Built DPR corpus subset with {len(corpus_ds):,} passages.\n")
 
-    # ────────────────────────────────────────────────────────────────────
     # 3) Instantiate models & optimizer
-    # ────────────────────────────────────────────────────────────────────
     verifier  = RAGVerifier(device=DEVICE)
     retriever = Retriever(str(FAISS_PATH), corpus=corpus_ds, device=DEVICE)
 
@@ -159,9 +155,7 @@ def main():
     verifier.train()
     retriever.q.train()
 
-    # ────────────────────────────────────────────────────────────────────
     # 4) Batched training loop
-    # ────────────────────────────────────────────────────────────────────
     for epoch in range(EPOCHS):
         print(f"Epoch {epoch+1}/{EPOCHS}")
         running_loss = 0.0
@@ -220,9 +214,7 @@ def main():
                 print(f" step {step+1:<6}  avg_loss={avg:.4f}")
                 running_loss = 0.0
 
-    # ────────────────────────────────────────────────────────────────────
     # 5) Save checkpoint to new dir & filename
-    # ────────────────────────────────────────────────────────────────────
     ckpt_file = ckpt_dir / "fever_rag_split.pt"
 
     torch.save({
