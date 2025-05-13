@@ -152,3 +152,6 @@ Large Language Models have beem employed in the work on this project for general
 - [rag-mini-bioasq dataset](https://huggingface.co/datasets/rag-datasets/rag-mini-bioasq)
 - [FEVER dataset](https://huggingface.co/datasets/fever/fever/tree/main)
 
+## Acknowledgements
+
+We acknowledge and are thankful to the instructors of the course CS4782: Introduction to Deep Learning course at Cornell for providing us with the opportunity to reproduce the results of this interesting paper. The course outline drove us to create good final results and included a fun poster presentation, which gave us valuable insight into the field of academic project work.
